@@ -116,6 +116,69 @@ const PUZZLES = [
       { answer: "GOLF",   row: 5, col: 7, dir: "down",   clue: "Fore!" },
     ],
   },
+  {
+    theme: "In the Garden",
+    words: [
+      { answer: "FLOWER", row: 0, col: 0, dir: "down",   clue: "A bloom on a stem" },
+      { answer: "FENCE",  row: 0, col: 0, dir: "across", clue: "Marks the yard's edge" },
+      { answer: "ONION",  row: 2, col: 0, dir: "across", clue: "Layered bulb that brings tears" },
+      { answer: "EARTH",  row: 4, col: 0, dir: "across", clue: "Soil you dig in" },
+    ],
+  },
+  {
+    theme: "Outer Space",
+    words: [
+      { answer: "PLANET", row: 0, col: 0, dir: "down",   clue: "Earth is one" },
+      { answer: "PLUTO",  row: 0, col: 0, dir: "across", clue: "The demoted dwarf planet" },
+      { answer: "ALIEN",  row: 2, col: 0, dir: "across", clue: "Little green visitor" },
+      { answer: "TITAN",  row: 5, col: 0, dir: "across", clue: "Saturn's biggest moon" },
+    ],
+  },
+  {
+    theme: "Body Parts",
+    words: [
+      { answer: "FINGER", row: 0, col: 0, dir: "down",   clue: "Ten of these on two hands" },
+      { answer: "FACE",   row: 0, col: 0, dir: "across", clue: "Where your smile lives" },
+      { answer: "NOSE",   row: 2, col: 0, dir: "across", clue: "It knows a good smell" },
+      { answer: "ELBOW",  row: 4, col: 0, dir: "across", clue: "The arm's hinge" },
+    ],
+  },
+  {
+    theme: "At the Zoo",
+    words: [
+      { answer: "PARROT", row: 0, col: 0, dir: "down",   clue: "Bird that repeats you" },
+      { answer: "PANDA",  row: 0, col: 0, dir: "across", clue: "Black-and-white bamboo lover" },
+      { answer: "RHINO",  row: 2, col: 0, dir: "across", clue: "Horned heavyweight" },
+      { answer: "OTTER",  row: 4, col: 0, dir: "across", clue: "Playful river swimmer" },
+    ],
+  },
+  {
+    theme: "In the Veggie Patch",
+    words: [
+      { answer: "CARROT", row: 0, col: 0, dir: "down",   clue: "Orange root a rabbit loves" },
+      { answer: "CELERY", row: 0, col: 0, dir: "across", clue: "Crunchy green stalk" },
+      { answer: "RADISH", row: 2, col: 0, dir: "across", clue: "Small peppery red root" },
+      { answer: "ONION",  row: 4, col: 0, dir: "across", clue: "Layered bulb that brings tears" },
+    ],
+  },
+  {
+    theme: "Sweet Treats",
+    words: [
+      { answer: "CANDY", row: 0, col: 0, dir: "across", clue: "Halloween bag filler" },
+      { answer: "DONUT", row: 0, col: 3, dir: "down",   clue: "Ring with a hole" },
+      { answer: "TARTS", row: 4, col: 3, dir: "across", clue: "Little open-faced pies" },
+      { answer: "SUGAR", row: 4, col: 7, dir: "down",   clue: "Makes it all sweet" },
+    ],
+  },
+  {
+    theme: "Camping Trip",
+    words: [
+      { answer: "FOREST", row: 0, col: 0, dir: "down",   clue: "Where the trees crowd in" },
+      { answer: "FIRE",   row: 0, col: 0, dir: "across", clue: "Roast marshmallows over it" },
+      { answer: "RIVER",  row: 2, col: 0, dir: "across", clue: "Flowing water you might paddle" },
+      { answer: "SCOUT",  row: 4, col: 0, dir: "across", clue: "Merit-badge earner" },
+    ],
+  },
 ];
 
 if (typeof module !== "undefined") module.exports = PUZZLES;
