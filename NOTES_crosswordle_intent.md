@@ -78,4 +78,8 @@ game Wordle." Playable on her phone, hosted on her own website / as a web app.
 
 - More puzzles (validator makes adding them safe).
 - A proper share grid (emoji pattern) rather than a text summary.
-- PWA manifest so it can be "installed" to her home screen.
+- ~~PWA manifest so it can be "installed" to her home screen.~~ Done
+  2026-06-12 (manifest + service worker + icons). Laura noted she's wanted
+  this for "a few of my previous apps, without knowing at the time that it
+  existed" — the same three files (manifest.webmanifest, sw.js, icons/) can
+  be retrofitted onto any of her static web apps.
