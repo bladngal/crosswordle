@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#f7f4ee" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Crosswordle</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232e9e8f'/%3E%3Ctext x='32' y='44' font-family='Helvetica,Arial' font-size='36' font-weight='800' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <button class="icon-btn" id="btn-help" aria-label="How to play">?</button>
+    <h1>Cross<span>wordle</span></h1>
+    <div class="header-right">
+      <button class="icon-btn" id="btn-stats" aria-label="Statistics">▦</button>
+      <button class="icon-btn" id="btn-sound" aria-label="Toggle sound">♪</button>
+    </div>
+  </header>
+
+  <div id="theme-bar">
+    <span id="puzzle-no"></span>
+    <span class="dot">·</span>
+    Theme: <strong id="theme-name"></strong>
+  </div>
+
+  <main>
+    <div id="grid" role="grid" aria-label="Crosswordle grid"></div>
+
+    <div id="word-bar">
+      <span id="word-label">Tap a word to begin</span>
+      <button id="btn-hint" hidden>Hint</button>
+    </div>
+    <div id="clue" hidden></div>
+  </main>
+
+  <div id="keyboard" aria-label="Keyboard"></div>
+
+  <!-- How to play -->
+  <div class="overlay" id="overlay-help" hidden>
+    <div class="card">
+      <button class="card-close" data-close aria-label="Close">×</button>
+      <h2>How to play</h2>
+      <p>Guess every word in the mini crossword. All the words fit the day's <strong>theme</strong> — that's your only starting hint!</p>
+      <ul>
+        <li><strong>Tap any square</strong> to pick a word (tap again on a crossing to switch direction).</li>
+        <li>Type a guess for the whole word and hit <strong>Enter</strong>.</li>
+        <li><span class="chip chip-correct">A</span> right letter, right spot — it locks into the grid. On later guesses, just type the whole word naturally: locked letters soak up their keystroke without changing.</li>
+        <li><span class="chip chip-present">B</span> in the word, but a different spot. It lingers in amber right where you tried it — and tiny pencil marks keep the full history of every spot you've tested it — so you never try the same place twice. Just type over them.</li>
+        <li><span class="chip chip-absent">C</span> not in this word at all.</li>
+      </ul>
+      <p>The keyboard remembers what you've learned <em>for each word separately</em> — switch words and it switches too. Locked letters carry across crossings, so every solve helps its neighbors. Stuck? Tap <strong>Hint</strong> for a clue.</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="overlay" id="overlay-stats" hidden>
+    <div class="card">
+      <button class="card-close" data-close aria-label="Close">×</button>
+      <h2>Statistics</h2>
+      <div class="stat-row"><span id="stat-wins">0</span><label>puzzles solved</label></div>
+      <div class="stat-row"><span id="stat-streak">0</span><label>day streak</label></div>
+      <div class="stat-row"><span id="stat-best">–</span><label>fewest guesses</label></div>
+    </div>
+  </div>
+
+  <!-- Win -->
+  <div class="overlay" id="overlay-win" hidden>
+    <div class="card">
+      <button class="card-close" data-close aria-label="Close">×</button>
+      <div class="win-emoji">🎉</div>
+      <h2 id="win-title">Solved!</h2>
+      <p id="win-summary"></p>
+      <div id="win-words"></div>
+      <div class="card-buttons">
+        <button class="btn-primary" id="btn-share">Share</button>
+        <button class="btn-secondary" id="btn-another">Play another</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" hidden></div>
+
+  <script src="puzzles.js"></script>
+  <script src="words.js"></script>
+  <script src="audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

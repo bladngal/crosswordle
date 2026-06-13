@@ -1,0 +1,364 @@
+/* Crosswordle — soft, warm palette deliberately a step away from Wordle's
+ * green/yellow-on-white: teal for correct, amber for present, on warm paper. */
+:root {
+  --bg: #f7f4ee;
+  --ink: #243038;
+  --ink-soft: #6b7672;
+  --paper: #ffffff;
+  --cell-border: #cfd6d0;
+  --correct: #2e9e8f;
+  --present: #e3a84e;
+  --absent-cell: #aab3ae;
+  --absent-key: #5b6562;
+  --key-bg: #dde3dd;
+  --accent: #e0735c;
+  --cell: 48px;
+  --gap: 5px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- header ---------- */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 4px;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+h1 span { color: var(--correct); }
+
+.header-right { display: flex; gap: 6px; }
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cell-border);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+.icon-btn:active { transform: scale(0.93); }
+.icon-btn.muted { opacity: 0.4; text-decoration: line-through; }
+
+#theme-bar {
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-soft);
+  padding: 2px 12px 8px;
+}
+#theme-bar strong { color: var(--accent); font-weight: 700; }
+#theme-bar .dot { margin: 0 4px; }
+
+/* ---------- main / grid ---------- */
+main {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+#grid {
+  display: grid;
+  gap: var(--gap);
+  margin-bottom: 12px;
+}
+
+.cell {
+  position: relative;
+  width: var(--cell);
+  height: var(--cell);
+  border: 2px solid var(--cell-border);
+  border-radius: 9px;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell) * 0.52);
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.cell .num {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: calc(var(--cell) * 0.22);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.cell.active {
+  border-color: var(--correct);
+  background: #e8f4f1;
+}
+.cell.cursor { box-shadow: inset 0 -4px 0 -1px var(--correct); }
+
+.cell.locked {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+}
+.cell.locked .num { color: rgba(255, 255, 255, 0.75); }
+
+/* Amber leftover from the last guess — right letter, wrong spot, tried here.
+ * Display-only reminder; typing paints over it. */
+.cell.residue {
+  background: #fdf3e2;
+  border-color: var(--present);
+  border-style: dashed;
+  color: #c08a2d;
+}
+
+/* Pencil marks: every amber letter previously tried at this position. */
+.cell .marks {
+  position: absolute;
+  bottom: 1px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: calc(var(--cell) * 0.22);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #c08a2d;
+  pointer-events: none;
+}
+.cell.flash-correct .marks,
+.cell.flash-present .marks,
+.cell.flash-absent .marks,
+.cell.flip .marks { visibility: hidden; }
+
+.cell.flash-correct { background: var(--correct); border-color: var(--correct); color: #fff; }
+.cell.flash-present { background: var(--present); border-color: var(--present); color: #fff; }
+.cell.flash-absent  { background: var(--absent-cell); border-color: var(--absent-cell); color: #fff; }
+
+.cell.pop { animation: pop 0.12s ease; }
+@keyframes pop { 50% { transform: scale(1.12); } }
+
+.cell.flip { animation: flip 0.45s ease; }
+@keyframes flip {
+  0% { transform: rotateX(0); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0); }
+}
+
+.cell.shake { animation: shake 0.4s ease; }
+@keyframes shake {
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+/* ---------- word info bar ---------- */
+#word-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  min-height: 30px;
+}
+#word-bar strong { color: var(--ink); }
+
+#btn-hint {
+  border: 1.5px solid var(--present);
+  color: #b07d28;
+  background: #fdf3e2;
+  border-radius: 14px;
+  padding: 3px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#clue {
+  font-size: 14px;
+  font-style: italic;
+  color: #b07d28;
+  padding-top: 4px;
+  text-align: center;
+}
+
+/* ---------- keyboard ---------- */
+#keyboard {
+  padding: 6px 4px calc(8px + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.krow {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.key {
+  flex: 1;
+  max-width: 44px;
+  height: 54px;
+  border: none;
+  border-radius: 7px;
+  background: var(--key-bg);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  padding: 0;
+}
+.key:active { filter: brightness(0.9); }
+.key.wide { flex: 1.6; max-width: 70px; font-size: 12px; }
+
+.key.kb-correct { background: var(--correct); color: #fff; }
+.key.kb-present { background: var(--present); color: #fff; }
+.key.kb-absent  { background: var(--absent-key); color: #cfd6d0; }
+
+/* ---------- toast ---------- */
+#toast {
+  position: fixed;
+  top: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  z-index: 20;
+  animation: toast-in 0.18s ease;
+}
+#toast[hidden] { display: none; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ---------- overlays ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 38, 36, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+.overlay[hidden] { display: none; }
+
+.card {
+  position: relative;
+  background: var(--paper);
+  border-radius: 18px;
+  padding: 22px 22px 18px;
+  max-width: 380px;
+  width: 100%;
+  max-height: 84dvh;
+  overflow: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.card h2 { margin: 0 0 10px; font-size: 20px; }
+.card ul { padding-left: 20px; margin: 10px 0; }
+.card li { margin-bottom: 7px; }
+
+.card-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.chip {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: 800;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+.chip-correct { background: var(--correct); }
+.chip-present { background: var(--present); }
+.chip-absent  { background: var(--absent-cell); }
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 12px 0;
+}
+.stat-row span { font-size: 30px; font-weight: 800; color: var(--correct); min-width: 56px; text-align: right; }
+.stat-row label { color: var(--ink-soft); }
+
+.win-emoji { text-align: center; font-size: 42px; }
+#overlay-win h2 { text-align: center; }
+#win-summary { text-align: center; color: var(--ink-soft); margin: 6px 0 12px; }
+
+#win-words { font-size: 14px; color: var(--ink-soft); margin-bottom: 14px; }
+#win-words div { display: flex; justify-content: space-between; padding: 3px 6px; }
+#win-words strong { color: var(--ink); letter-spacing: 1px; }
+
+.card-buttons { display: flex; gap: 10px; }
+
+.btn-primary, .btn-secondary {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-primary { background: var(--correct); color: #fff; }
+.btn-secondary { background: var(--key-bg); color: var(--ink); }
