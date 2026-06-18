@@ -1,10 +1,11 @@
 # NOTES: Crosswordle — Hybrid Redesign Intent (2026-06-18)
 
 A major new design direction for Crosswordle, captured from a long conversation
-with Laura. This is **exploratory and not fully settled** — lots of "maybe" and
-"I guess" — so it's recorded as intent to revisit, not a finished spec. Where
-Laura's exact phrasing carries meaning, it's quoted. Confidence is tagged per
-item: **[DECIDED]**, **[LEANING]**, **[OPEN]**.
+with Laura on 2026-06-18, then **locked down the same day** — the seven open
+questions were resolved with her (see "Open questions — RESOLVED" near the end).
+Where Laura's exact phrasing carries meaning, it's quoted. Confidence is tagged
+per item: **[DECIDED]**, **[LEANING]**, **[OPEN]**; the load-bearing items are
+now [DECIDED 2026-06-18]. This is the spec to build against.
 
 > Read `NOTES_crosswordle_intent.md` first — that's the original founding
 > vision. This file is a candidate *evolution* of it, not a replacement. The
@@ -59,7 +60,10 @@ What that means concretely:
   need to have a theme because crossword puzzles have hints per word."* BUT —
   *"keeping them themed is nice,"* and a good theme *"can be much broader."*
   So: **themes stay, but become a flavour/extra-hint layer rather than the only
-  information you get.**
+  information you get.** **[DECIDED 2026-06-18]** Per-word clues are the primary
+  hint; the theme is kept as a **flavour/bonus layer** AND powers the
+  board-level escalating hint (genus → narrower → specific). Themes can be
+  broader/looser than today's tight categories.
 
 ⚠️ This is a real pivot away from the original intent, where the **theme was the
 entire hint** (*"that's all you have is what theme is it"*). Revisit deliberately.
@@ -115,10 +119,16 @@ The "hint too available" complaint produces the richest design thinking here.
 2. **Per-word hints** — the crossword clue for a single word. Harder, more
    crossword-like.
 
-**[OPEN]** Should hints count against score / be shared? *"I guess I would say
-no"* on penalizing hints — **but** the puzzle *"should be built with not a very
-hard level of difficulty"* if hints are free. (Tension to resolve: free hints
-only work if the baseline difficulty is gentle.)
+**[DECIDED 2026-06-18]** Hint **cost & timing** — resolved together:
+
+- Hints are **available anytime** (not gated behind a guess count), but **taking
+  a hint costs one of your per-word guesses** (self-balancing, so no separate
+  unlock gate is needed).
+- **First tier (vague) is free on score**; the **more-obvious and giveaway tiers
+  cost score** too. So: the first hint costs a guess but no score; deeper tiers
+  cost a guess **and** score.
+- Hints-used is **shown in the share graphic** regardless.
+- Baseline puzzle difficulty stays **gentle / "not very hard"** so this stays fair.
 
 ---
 
@@ -155,8 +165,9 @@ lose it — *"I literally can't think of any more words that would fit"* — and
 that tension is good; she could brute-force letters with off-theme words but
 chooses not to.
 
-**[LEANING]** Add a **per-word guess cap, Wordle-style: ~5 or 6 guesses per
-word.** *"You can fail each word... you only get 5 or 6 attempts per word."*
+**[DECIDED 2026-06-18]** Add a **per-word guess cap of 6** (Wordle-familiar).
+Failing a word does **not** end the puzzle — **you keep playing the rest**; the
+failed word just counts as a "fail" in your score. (No whole-puzzle "game over".)
 
 ⚠️ Directly contradicts the original/current decision (*"no guess limit — total
 guess count is the score"* in `NOTES_crosswordle_intent.md`). This is the change
@@ -166,16 +177,15 @@ that introduces lose-ability. Revisit deliberately.
 
 ## What happens when you fail a word
 
-**[OPEN, leaning toward opt-in reveal]** If you run out of guesses on a word:
+**[DECIDED 2026-06-18]** If you run out of guesses on a word:
 
-- Do you keep playing the rest of the puzzle? **Likely yes.**
-- Do you get the failed word *for free* so you can continue? Tension: giving it
-  away *"could accidentally give away something when you weren't ready"* (it
-  feeds crossing letters into the other words).
-- **Proposed solution:** a **failed word is NOT auto-revealed** — *"you would
-  have to tap it again to reveal it,"* opt-in, *"in case you want to challenge
-  yourself for the other words it's attached to."* Even revealed, it only hands
-  you **one letter per crossing word**, so you're still challenged.
+- You **keep playing the rest of the puzzle** (see lose rules above).
+- The failed word is **NOT auto-revealed** — *"you would have to tap it again to
+  reveal it,"* opt-in, *"in case you want to challenge yourself for the other
+  words it's attached to."*
+- When you do reveal it, it fills that word and **seeds only the shared crossing
+  letters** into its neighbors (one letter per crossing). The neighbors still
+  have to be solved — *"you'd just get one letter... in the other words."*
 
 ---
 
@@ -185,7 +195,8 @@ Scoring is *"a major part of Wordle"* and a core thing to preserve.
 
 - **[DECIDED]** Score is **relative to attempts per word**, *"not just
   completion."* Track at least guesses-per-word and fails.
-- **[LEANING]** A **shareable result graphic** (Wordle-style), showing:
+- **[DECIDED 2026-06-18]** A **shareable result graphic**: the **board shape +
+  green/red cells + counts** (guesses, fails, hints). Specifically:
   - the **shape of the board** (the crossing layout),
   - **green squares** for solved words,
   - **X's / red squares** for failed words that were auto-filled,
@@ -234,10 +245,13 @@ compactly. Laura's proposed approach:
 > encoding as an implementation detail to design later; the **requirement** is:
 > shareable, self-contained puzzle codes referencing a shipped catalog.
 
-**[OPEN]** Alternative she floated and set aside: keep a growing **hand-authored
-catalog** (*"puzzle 13... add a little more"*) instead of full procedural
-generation. Generation is the more ambitious path; the catalog is the safe one.
-Not finally decided which — but the lean is toward generation.
+**[DECIDED 2026-06-18] Catalog now, generator later.** Build the **shared
+word+clue catalog and the share-code system first**, ship **hand-authored**
+puzzles on top of it, then add **procedural generation** on top once the data
+model proves out. The same architecture (catalog + ID/crossing references)
+serves both, so this is the lowest-risk path to longevity — it doesn't bet the
+project on the hardest part (generating *good* themed crossings) up front, but
+keeps that door fully open. The catalog/encoding is the first thing to design.
 
 ---
 
@@ -252,19 +266,30 @@ Not finally decided which — but the lean is toward generation.
 
 ---
 
-## Open questions to resolve before/while building
+## Open questions — RESOLVED 2026-06-18
 
-- Do free hints really stay free, or do they cost score? (Lean: free, but only
-  if base difficulty is gentle.)
-- Procedural generation vs. growing hand-authored catalog — commit to one.
-- Exact failed-word reveal rules (opt-in tap confirmed; per-crossing letter
-  payout to confirm).
-- Per-word guess cap number (5 vs 6) and what "losing the puzzle" vs "losing a
-  word" means.
-- How tiered hints interact with the per-word guess cap (e.g. does hint #1
-  unlock after 3 guesses, leaving fewer guesses to win?).
-- Share-graphic exact format.
-- How much the theme still matters once per-word clues exist.
+All seven locked with Laura (decisions also folded into the sections above):
+
+1. **Hints cost?** First (vague) tier free on score; deeper tiers cost score.
+   Any hint costs one guess. Hints-used shown in share. Base difficulty gentle.
+2. **Generation vs. catalog?** **Catalog now, generator later** — same
+   architecture, generation added on top once proven.
+3. **Failed-word reveal?** Opt-in tap to reveal; seeds **only the crossing
+   letters** into neighbors (one per crossing); neighbors still solved manually.
+4. **Guess cap / losing?** **6 per word**; fail a word but keep playing the
+   rest; no whole-puzzle game-over.
+5. **Hint × guess-cap interaction?** Hints available anytime; taking one **costs
+   a guess** (self-balancing, no unlock gate).
+6. **Share format?** **Board shape + green/red cells + counts** (guesses, fails,
+   hints).
+7. **Theme's role?** Kept as a **flavour/bonus layer** + board-level escalating
+   hint; per-word clues are the primary hint; themes can be broader.
+
+### Still genuinely open (design-during-build, not blocking)
+- Exact **encoding** of the share code (hex format, length) — implementation detail.
+- Exact **score formula** (how guesses, fails, and hints combine into a number).
+- Catalog **clue-authoring** workload and how clues are stored per word.
+- Visual layout when 3 per-word Wordle boards + escalating hints share the screen.
 
 ---
 
@@ -296,5 +321,5 @@ Suggested build order if/when greenlit (smallest reviewable steps first):
 
 ---
 
-*Captured 2026-06-18 from conversation. Nothing here is built yet — this is the
-intent to revisit before implementation begins.*
+*Captured 2026-06-18 from conversation; the seven open questions were locked
+down the same day. Nothing is built yet — this is the agreed spec to build from.*
