@@ -242,6 +242,17 @@ main {
   cursor: pointer;
 }
 
+#btn-reveal {
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  background: #fdece8;
+  border-radius: 14px;
+  padding: 3px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 #clue {
   font-size: 14px;
   font-style: italic;

@@ -38,6 +38,7 @@
     <div id="word-bar">
       <span id="word-label">Tap a word to begin</span>
       <button id="btn-hint" hidden>Hint</button>
+      <button id="btn-reveal" hidden>Reveal word</button>
     </div>
     <div id="clue" hidden></div>
   </main>
@@ -58,6 +59,7 @@
         <li><span class="chip chip-absent">C</span> not in this word at all.</li>
       </ul>
       <p>The keyboard remembers what you've learned <em>for each word separately</em> — switch words and it switches too. Locked letters carry across crossings, so every solve helps its neighbors. Stuck? Tap <strong>Hint</strong> for a clue.</p>
+      <p>You get <strong>6 guesses per word</strong>. Run out and the word is a <strong>miss</strong> — but the puzzle keeps going, so play on. Tap a missed word and hit <strong>Reveal word</strong> to fill it in; that hands its crossing letters to the neighbors, but you still solve the rest.</p>
     </div>
   </div>
 
@@ -76,7 +78,7 @@
   <div class="overlay" id="overlay-win" hidden>
     <div class="card">
       <button class="card-close" data-close aria-label="Close">×</button>
-      <div class="win-emoji">🎉</div>
+      <div class="win-emoji" id="win-emoji">🎉</div>
       <h2 id="win-title">Solved!</h2>
       <p id="win-summary"></p>
       <div id="win-words"></div>

@@ -12,6 +12,7 @@
 
   const EPOCH = new Date(2026, 5, 1); // June 1 2026 = puzzle #1
   const REVEAL_STEP = 280;            // ms between cell flips
+  const MAX_GUESSES = 6;              // per-word guess cap; hit it without solving = a "fail"
   const KB_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "⏎ZXCVBNM⌫"];
   const RANK = { absent: 0, present: 1, correct: 2 };
 
@@ -36,8 +37,11 @@
       attempts: puzzle.words.map(() => []),        // per-word guess history: [{ guess[], results[] }]
       guesses: puzzle.words.map(() => 0),
       solved: puzzle.words.map(() => false),
+      failed: puzzle.words.map(() => false),    // hit the guess cap without solving
+      revealed: puzzle.words.map(() => false),  // player opted to reveal a failed word
       totalGuesses: 0,
-      won: false,
+      won: false,    // ended with every word solved
+      ended: false,  // every word is solved or failed — no moves left
     };
   }
 
@@ -96,6 +100,10 @@
       .filter((p) => p >= 0);
   }
 
+  // A word is "open" while it can still be guessed — not solved and not failed.
+  function wordOpen(wi) { return !state.solved[wi] && !state.failed[wi]; }
+  function allWordsClosed() { return puzzle.words.every((_, wi) => !wordOpen(wi)); }
+
   // ---------- rendering ----------
   const $ = (id) => document.getElementById(id);
   const gridEl = $("grid");
@@ -149,7 +157,7 @@
   function refreshCells() {
     const activeSet = new Set();
     let cursorKey = null;
-    if (active !== null && !state.won) {
+    if (active !== null && !state.ended) {
       const wc = wordCells(active);
       wc.forEach((cell) => activeSet.add(`${cell.r},${cell.c}`));
       const un = unlockedPositions(active);
@@ -204,12 +212,13 @@
   }
 
   function renderWordBoard() {
-    if (active === null || state.won) { wbEl.hidden = true; wbEl.innerHTML = ""; return; }
+    if (active === null || state.ended) { wbEl.hidden = true; wbEl.innerHTML = ""; return; }
     const wi = active;
     const len = puzzle.words[wi].answer.length;
     const attempts = state.attempts[wi];
     const un = unlockedPositions(wi);
     const wc = wordCells(wi);
+    const open = wordOpen(wi);
     const rows = [];
 
     // Past guesses, colored by their stored result.
@@ -217,8 +226,9 @@
       rows.push(boardRow(len, (pos) => ({ ch: a.guess[pos], cls: "wb-" + a.results[pos] })));
     });
 
-    // Live input row (skip once the word is solved — its last guess is the win).
-    if (!state.solved[wi]) {
+    // Live input row + empty rows out to the guess cap — only while still open.
+    // (Solved stops at the winning row; failed shows all six misses, Wordle-style.)
+    if (open) {
       const cursorPos = pending.length < un.length ? un[pending.length] : -1;
       rows.push(boardRow(len, (pos) => {
         const lockedLetter = state.locked[`${wc[pos].r},${wc[pos].c}`];
@@ -227,6 +237,9 @@
         if (slot >= 0 && slot < pending.length) return { ch: pending[slot], cls: "wb-filled" };
         return { ch: "", cls: pos === cursorPos ? "wb-empty wb-cursor" : "wb-empty" };
       }));
+      while (rows.length < MAX_GUESSES) {
+        rows.push(boardRow(len, () => ({ ch: "", cls: "wb-empty" })));
+      }
     }
 
     if (!rows.length) { wbEl.hidden = true; wbEl.innerHTML = ""; return; } // solved purely by crossings
@@ -275,21 +288,34 @@
   function renderWordBar() {
     const label = $("word-label");
     const hintBtn = $("btn-hint");
+    const revealBtn = $("btn-reveal");
     const clueEl = $("clue");
     clueEl.hidden = true;
     if (active === null) {
-      label.innerHTML = state.won ? "🎉 Puzzle complete!" : "Tap a word to begin";
+      label.innerHTML = state.ended
+        ? (state.won ? "🎉 Puzzle complete!" : "Puzzle over — some words got away")
+        : "Tap a word to begin";
       hintBtn.hidden = true;
+      revealBtn.hidden = true;
       return;
     }
     const w = puzzle.words[active];
     const num = numbers.get(active);
     const dir = w.dir === "across" ? "Across" : "Down";
-    const status = state.solved[active]
-      ? ` · <strong style="color:var(--correct)">✓ solved</strong>`
-      : state.guesses[active] ? ` · ${state.guesses[active]} ${state.guesses[active] === 1 ? "guess" : "guesses"}` : "";
+    let status;
+    if (state.solved[active]) {
+      status = ` · <strong style="color:var(--correct)">✓ solved</strong>`;
+    } else if (state.failed[active]) {
+      status = state.revealed[active]
+        ? ` · <strong style="color:var(--accent)">revealed</strong>`
+        : ` · <strong style="color:var(--accent)">✗ out of guesses</strong>`;
+    } else {
+      status = ` · ${state.guesses[active]} / ${MAX_GUESSES} guesses`;
+    }
     label.innerHTML = `<strong>${num} ${dir}</strong> · ${w.answer.length} letters${status}`;
-    hintBtn.hidden = state.solved[active];
+    const fullyLocked = wordCells(active).every((cell) => state.locked[`${cell.r},${cell.c}`]);
+    hintBtn.hidden = !wordOpen(active);
+    revealBtn.hidden = !(state.failed[active] && !fullyLocked);
   }
 
   // ---------- interactions ----------
@@ -322,7 +348,7 @@
   }
 
   function handleKey(k) {
-    if (revealing || state.won) return;
+    if (revealing || state.ended) return;
     Sound.unlock();
     if (k === "Enter") return submitGuess();
     if (k === "Backspace") {
@@ -335,10 +361,10 @@
       return;
     }
     if (!/^[A-Z]$/.test(k)) return;
-    if (active === null || state.solved[active]) {
-      const firstUnsolved = state.solved.indexOf(false);
-      if (firstUnsolved === -1) return;
-      if (active === null || state.solved[active]) selectWord(firstUnsolved);
+    if (active === null || !wordOpen(active)) {
+      const firstOpen = puzzle.words.findIndex((_, wi) => wordOpen(wi));
+      if (firstOpen === -1) return;
+      selectWord(firstOpen);
     }
     const un = unlockedPositions(active);
     if (pending.length >= un.length) return;
@@ -402,7 +428,7 @@
   }
 
   function submitGuess() {
-    if (active === null || state.solved[active]) return;
+    if (active === null || !wordOpen(active)) return;
     const wi = active;
     const w = puzzle.words[wi];
     const un = unlockedPositions(wi);
@@ -466,23 +492,59 @@
     consumed = new Set();
     revealing = false;
 
-    const newlySolved = checkSolvedWords();
+    checkSolvedWords();
+
+    // Out of guesses on this word? It's a fail — but the puzzle keeps going.
+    let justFailed = false;
+    if (!state.solved[wi] && state.guesses[wi] >= MAX_GUESSES) {
+      state.failed[wi] = true;
+      justFailed = true;
+    }
+
     refreshCells();
     renderKeyboard();
     renderWordBar();
     saveState();
 
-    if (state.solved.every(Boolean)) return onWin();
-    if (newlySolved.includes(wi)) {
-      // Auto-advance to the next unsolved word after a beat.
-      setTimeout(() => {
-        if (revealing || state.won) return;
-        for (let i = 1; i <= puzzle.words.length; i++) {
-          const next = (wi + i) % puzzle.words.length;
-          if (!state.solved[next]) return selectWord(next);
-        }
-      }, 700);
+    if (allWordsClosed()) return onEnd();
+
+    if (justFailed) {
+      Sound.error();
+      showToast("Out of guesses — tap the word to reveal it");
     }
+    if (state.solved[wi] || justFailed) {
+      // Auto-advance to the next still-open word after a beat.
+      setTimeout(() => {
+        if (revealing || state.ended) return;
+        advanceToNextOpen(wi);
+      }, justFailed ? 1000 : 700);
+    }
+  }
+
+  function advanceToNextOpen(fromWi) {
+    for (let i = 1; i <= puzzle.words.length; i++) {
+      const next = (fromWi + i) % puzzle.words.length;
+      if (wordOpen(next)) return selectWord(next);
+    }
+  }
+
+  // Opt-in reveal of a failed word: fills its letters and — through the normal
+  // crossing-lock mechanic — seeds only the shared crossing letters into its
+  // neighbors. Those neighbors still have to be solved on their own.
+  function revealWord(wi) {
+    if (!state.failed[wi] || state.revealed[wi]) return;
+    state.revealed[wi] = true;
+    const w = puzzle.words[wi];
+    wordCells(wi).forEach((cell, pos) => {
+      if (!state.locked[`${cell.r},${cell.c}`]) lockCell(cell, w.answer[pos]);
+    });
+    checkSolvedWords(); // a neighbor whose last gap was this crossing is now done
+    Sound.tick();
+    if (allWordsClosed()) return onEnd();
+    refreshCells();
+    renderKeyboard();
+    renderWordBar();
+    saveState();
   }
 
   function lockCell(cell, letter) {
@@ -494,25 +556,26 @@
   function checkSolvedWords() {
     const newly = [];
     puzzle.words.forEach((w, wi) => {
-      if (state.solved[wi]) return;
+      if (state.solved[wi] || state.failed[wi]) return; // a failed word stays failed even if crossings fill it
       const done = wordCells(wi).every((cell) => state.locked[`${cell.r},${cell.c}`]);
       if (done) { state.solved[wi] = true; newly.push(wi); }
     });
-    if (newly.length && !state.solved.every(Boolean)) Sound.solved();
+    if (newly.length && !allWordsClosed()) Sound.solved();
     return newly;
   }
 
   // ---------- win / stats / share ----------
-  function onWin() {
-    state.won = true;
+  function onEnd() {
+    state.ended = true;
+    state.won = puzzle.words.every((_, wi) => state.solved[wi]); // every word solved, none failed
     active = null;
     refreshCells();
     renderKeyboard();
     renderWordBar();
     saveState();
-    if (!freePlay) recordWin();
-    Sound.win();
-    setTimeout(showWinModal, 600);
+    if (state.won && !freePlay) recordWin();
+    if (state.won) Sound.win(); else Sound.error();
+    setTimeout(showEndModal, 600);
   }
 
   function loadStats() {
@@ -531,16 +594,27 @@
     localStorage.setItem("cw-stats", JSON.stringify(stats));
   }
 
-  function showWinModal() {
+  function showEndModal() {
     const g = state.totalGuesses;
-    $("win-summary").textContent =
-      `${freePlay ? puzzle.theme : `Crosswordle #${puzzleNumber} — ${puzzle.theme}`} · solved in ${g} ${g === 1 ? "guess" : "guesses"}`;
+    const fails = state.failed.filter(Boolean).length;
+    const solvedCount = state.solved.filter(Boolean).length;
+    $("win-emoji").textContent = state.won ? "🎉" : "🧩";
+    $("win-title").textContent = state.won ? "Solved!" : "Good try!";
+    const head = freePlay ? puzzle.theme : `Crosswordle #${puzzleNumber} — ${puzzle.theme}`;
+    const tail = state.won
+      ? `solved in ${g} ${g === 1 ? "guess" : "guesses"}`
+      : `${solvedCount}/${puzzle.words.length} solved · ${fails} ${fails === 1 ? "fail" : "fails"}`;
+    $("win-summary").textContent = `${head} · ${tail}`;
     const list = $("win-words");
     list.innerHTML = "";
     puzzle.words.forEach((w, wi) => {
       const row = document.createElement("div");
       const gc = state.guesses[wi];
-      row.innerHTML = `<strong>${w.answer}</strong><span>${gc ? `${gc} ${gc === 1 ? "guess" : "guesses"}` : "solved by crossings ✨"}</span>`;
+      let note;
+      if (state.failed[wi]) note = `<span style="color:var(--accent)">missed ✗</span>`;
+      else if (gc) note = `${gc} ${gc === 1 ? "guess" : "guesses"}`;
+      else note = "solved by crossings ✨";
+      row.innerHTML = `<strong>${w.answer}</strong><span>${note}</span>`;
       list.appendChild(row);
     });
     $("overlay-win").hidden = false;
@@ -573,6 +647,9 @@
       if (saved && saved.kb?.length === puzzle.words.length) {
         saved.residue ??= puzzle.words.map(() => ({}));  // states saved before this field existed
         saved.attempts ??= puzzle.words.map(() => []);   // guess history added in the board redesign
+        saved.failed ??= puzzle.words.map(() => false);  // guess-cap lose-ability added in step 2
+        saved.revealed ??= puzzle.words.map(() => false);
+        saved.ended ??= !!saved.won;                     // pre-cap saves only ended by winning
         return saved;
       }
     } catch {}
@@ -600,8 +677,8 @@
     renderWordBar();
     $("theme-name").textContent = puzzle.theme;
     $("puzzle-no").textContent = freePlay ? "Free play" : `#${puzzleNumber}`;
-    if (!state.won) selectWord(0);
-    if (state.won && !freePlay) setTimeout(showWinModal, 400);
+    if (!state.ended) selectWord(0);
+    if (state.ended && !freePlay) setTimeout(showEndModal, 400);
   }
 
   function init() {
@@ -612,6 +689,10 @@
       const clueEl = $("clue");
       clueEl.textContent = `“${puzzle.words[active].clue}”`;
       clueEl.hidden = !clueEl.hidden;
+    });
+
+    $("btn-reveal").addEventListener("click", () => {
+      if (active !== null) revealWord(active);
     });
 
     $("btn-help").addEventListener("click", () => ($("overlay-help").hidden = false));
