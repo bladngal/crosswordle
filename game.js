@@ -33,6 +33,7 @@
       locked: {},                                  // "r,c" -> letter
       kb: puzzle.words.map(() => ({})),            // per-word letter -> status
       residue: puzzle.words.map(() => ({})),       // per-word pos -> amber letter from last guess
+      attempts: puzzle.words.map(() => []),        // per-word guess history: [{ guess[], results[] }]
       guesses: puzzle.words.map(() => 0),
       solved: puzzle.words.map(() => false),
       totalGuesses: 0,
@@ -98,10 +99,11 @@
   // ---------- rendering ----------
   const $ = (id) => document.getElementById(id);
   const gridEl = $("grid");
+  const wbEl = $("word-board");
 
   function sizeCells() {
     const availW = Math.min(window.innerWidth, 560) - 28;
-    const availH = window.innerHeight * 0.46;
+    const availH = window.innerHeight * 0.40; // leave room for the per-word board below
     const gap = 5;
     const size = Math.max(26, Math.min(
       54,
@@ -109,6 +111,11 @@
       Math.floor((availH - (rows - 1) * gap) / rows)
     ));
     document.documentElement.style.setProperty("--cell", size + "px");
+
+    // Per-word board cells: sized so the longest word fits on one row.
+    const maxLen = Math.max(...puzzle.words.map((w) => w.answer.length));
+    const wb = Math.max(22, Math.min(34, Math.floor((availW - (maxLen - 1) * gap) / maxLen)));
+    document.documentElement.style.setProperty("--wb", wb + "px");
   }
 
   function renderGrid() {
@@ -180,6 +187,51 @@
       cell.el.classList.toggle("active", activeSet.has(key) && !lockedLetter && !residue);
       cell.el.classList.toggle("cursor", key === cursorKey);
     }
+    renderWordBoard();
+  }
+
+  // ---------- per-word Wordle board ----------
+  // A clean horizontal view of the active word: one row per past guess (colored
+  // like Wordle) plus a live input row. The crossword grid stays the spatial
+  // map; this board is the easy-to-read single-word view Laura asked for.
+  function boardRow(len, cellFn) {
+    let html = "";
+    for (let pos = 0; pos < len; pos++) {
+      const { ch, cls } = cellFn(pos);
+      html += `<div class="wb-cell ${cls}">${ch}</div>`;
+    }
+    return `<div class="wb-row">${html}</div>`;
+  }
+
+  function renderWordBoard() {
+    if (active === null || state.won) { wbEl.hidden = true; wbEl.innerHTML = ""; return; }
+    const wi = active;
+    const len = puzzle.words[wi].answer.length;
+    const attempts = state.attempts[wi];
+    const un = unlockedPositions(wi);
+    const wc = wordCells(wi);
+    const rows = [];
+
+    // Past guesses, colored by their stored result.
+    attempts.forEach((a) => {
+      rows.push(boardRow(len, (pos) => ({ ch: a.guess[pos], cls: "wb-" + a.results[pos] })));
+    });
+
+    // Live input row (skip once the word is solved — its last guess is the win).
+    if (!state.solved[wi]) {
+      const cursorPos = pending.length < un.length ? un[pending.length] : -1;
+      rows.push(boardRow(len, (pos) => {
+        const lockedLetter = state.locked[`${wc[pos].r},${wc[pos].c}`];
+        if (lockedLetter) return { ch: lockedLetter, cls: "wb-locked" };       // known from a crossing
+        const slot = un.indexOf(pos);
+        if (slot >= 0 && slot < pending.length) return { ch: pending[slot], cls: "wb-filled" };
+        return { ch: "", cls: pos === cursorPos ? "wb-empty wb-cursor" : "wb-empty" };
+      }));
+    }
+
+    if (!rows.length) { wbEl.hidden = true; wbEl.innerHTML = ""; return; } // solved purely by crossings
+    wbEl.hidden = false;
+    wbEl.innerHTML = rows.join("");
   }
 
   // ---------- keyboard ----------
@@ -396,6 +448,7 @@
 
   function finalizeGuess(wi, guess, results) {
     const wc = wordCells(wi);
+    state.attempts[wi].push({ guess: guess.slice(), results: results.slice() });
     results.forEach((res, pos) => {
       const cell = wc[pos];
       cell.el.classList.remove("flip", "flash-correct", "flash-present", "flash-absent");
@@ -518,7 +571,8 @@
     try {
       const saved = JSON.parse(localStorage.getItem(saveKey()));
       if (saved && saved.kb?.length === puzzle.words.length) {
-        saved.residue ??= puzzle.words.map(() => ({})); // states saved before this field existed
+        saved.residue ??= puzzle.words.map(() => ({}));  // states saved before this field existed
+        saved.attempts ??= puzzle.words.map(() => []);   // guess history added in the board redesign
         return saved;
       }
     } catch {}

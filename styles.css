@@ -186,6 +186,40 @@ main {
   80% { transform: translateX(3px); }
 }
 
+/* ---------- per-word Wordle board ---------- */
+#word-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  margin-bottom: 12px;
+}
+#word-board[hidden] { display: none; }
+
+.wb-row { display: flex; gap: var(--gap); justify-content: center; }
+
+.wb-cell {
+  width: var(--wb, 32px);
+  height: var(--wb, 32px);
+  border: 2px solid var(--cell-border);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--wb, 32px) * 0.55);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wb-filled { border-color: var(--correct); }
+.wb-cursor { border-color: var(--correct); box-shadow: inset 0 -4px 0 -1px var(--correct); }
+
+.wb-locked,
+.wb-correct { background: var(--correct); border-color: var(--correct); color: #fff; }
+.wb-present { background: var(--present); border-color: var(--present); color: #fff; }
+.wb-absent  { background: var(--absent-cell); border-color: var(--absent-cell); color: #fff; }
+
 /* ---------- word info bar ---------- */
 #word-bar {
   display: flex;
