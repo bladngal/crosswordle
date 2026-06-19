@@ -61,7 +61,7 @@ const PUZZLES = [
     ],
   },
   {
-    theme: "Night Sky",
+    theme: "Up in the Sky",
     words: [
       { answer: "COMET", row: 0, col: 0, dir: "across", clue: "Icy visitor with a tail" },
       { answer: "MOON",  row: 0, col: 2, dir: "down",   clue: "Earth's nightlight" },
@@ -138,7 +138,7 @@ const PUZZLES = [
     theme: "Body Parts",
     words: [
       { answer: "FINGER", row: 0, col: 0, dir: "down",   clue: "Ten of these on two hands" },
-      { answer: "FACE",   row: 0, col: 0, dir: "across", clue: "Where your smile lives" },
+      { answer: "FOOT",   row: 0, col: 0, dir: "across", clue: "A shoe goes on it" },
       { answer: "NOSE",   row: 2, col: 0, dir: "across", clue: "It knows a good smell" },
       { answer: "ELBOW",  row: 4, col: 0, dir: "across", clue: "The arm's hinge" },
     ],
@@ -167,7 +167,7 @@ const PUZZLES = [
       { answer: "CANDY", row: 0, col: 0, dir: "across", clue: "Halloween bag filler" },
       { answer: "DONUT", row: 0, col: 3, dir: "down",   clue: "Ring with a hole" },
       { answer: "TARTS", row: 4, col: 3, dir: "across", clue: "Little open-faced pies" },
-      { answer: "SUGAR", row: 4, col: 7, dir: "down",   clue: "Makes it all sweet" },
+      { answer: "SUNDAE",  row: 4, col: 7, dir: "down",   clue: "Ice cream piled with toppings" },
     ],
   },
   {
