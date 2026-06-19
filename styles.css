@@ -253,6 +253,17 @@ main {
   cursor: pointer;
 }
 
+#btn-results {
+  border: 1.5px solid var(--correct);
+  color: var(--correct);
+  background: #e8f4f1;
+  border-radius: 14px;
+  padding: 3px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 #clue {
   font-size: 14px;
   font-style: italic;

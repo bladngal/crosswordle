@@ -289,14 +289,17 @@
     const label = $("word-label");
     const hintBtn = $("btn-hint");
     const revealBtn = $("btn-reveal");
+    const resultsBtn = $("btn-results");
     const clueEl = $("clue");
     clueEl.hidden = true;
+    resultsBtn.hidden = true;
     if (active === null) {
       label.innerHTML = state.ended
         ? (state.won ? "🎉 Puzzle complete!" : "Puzzle over — some words got away")
         : "Tap a word to begin";
       hintBtn.hidden = true;
       revealBtn.hidden = true;
+      resultsBtn.hidden = !state.ended; // let players reopen results/share after dismissing the modal
       return;
     }
     const w = puzzle.words[active];
@@ -693,6 +696,10 @@
 
     $("btn-reveal").addEventListener("click", () => {
       if (active !== null) revealWord(active);
+    });
+
+    $("btn-results").addEventListener("click", () => {
+      if (state.ended) showEndModal();
     });
 
     $("btn-help").addEventListener("click", () => ($("overlay-help").hidden = false));
